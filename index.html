@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вікторина «Корисна їжа»</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      color: #2d3436;
+      overflow-x: hidden;
+    }
+
+    .game-card {
+      background: #ffffff;
+      max-width: 620px;
+      width: 100%;
+      border-radius: 32px;
+      padding: 30px 25px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+      border: 6px solid #fff3bf;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .game-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #20bf6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .score-badge {
+      background: #ffeaa7;
+      color: #d35400;
+      font-size: 1.15rem;
+      font-weight: 800;
+      padding: 8px 18px;
+      border-radius: 25px;
+      box-shadow: 0 4px 0 #fdcb6e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .food-emoji {
+      font-size: 7rem;
+      line-height: 1.1;
+      margin: 10px 0 15px;
+      display: inline-block;
+      animation: bounceSlow 2.5s infinite ease-in-out;
+    }
+
+    @keyframes bounceSlow {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.05); }
+    }
+
+    .question-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 25px;
+      min-height: 75px;
+    }
+
+    .question-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2f3542;
+      line-height: 1.35;
+    }
+
+    .speak-btn {
+      background: #70a1ff;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #1e90ff;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+
+    .speak-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e90ff;
+    }
+
+    .feedback-banner {
+      min-height: 36px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: 18px;
+      border-radius: 15px;
+      padding: 6px 12px;
+      transition: all 0.25s ease;
+    }
+
+    .feedback-correct {
+      color: #20bf6b;
+      background: #e3fcef;
+    }
+
+    .feedback-wrong {
+      color: #eb3b5a;
+      background: #ffeef0;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .answer-card {
+      border: none;
+      border-radius: 26px;
+      padding: 25px 15px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .card-yes {
+      background: linear-gradient(145deg, #2ed573, #20bf6b);
+      box-shadow: 0 8px 0 #179653;
+      color: white;
+    }
+
+    .card-no {
+      background: linear-gradient(145deg, #ff6b81, #eb3b5a);
+      box-shadow: 0 8px 0 #b3243d;
+      color: white;
+    }
+
+    .answer-card:hover:not(:disabled) {
+      transform: translateY(-4px);
+      filter: brightness(1.05);
+    }
+
+    .answer-card:active:not(:disabled) {
+      transform: translateY(5px);
+    }
+
+    .answer-card:disabled {
+      opacity: 0.7;
+      cursor: default;
+    }
+
+    .thumb-emoji {
+      font-size: 4.5rem;
+      line-height: 1;
+    }
+
+    .card-label {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    /* Анімації реакції */
+    .celebrate {
+      animation: popCelebrate 0.6s ease;
+    }
+
+    @keyframes popCelebrate {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.25) rotate(8deg); }
+      60% { transform: scale(1.25) rotate(-8deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .shake {
+      animation: shakeWrong 0.45s ease;
+    }
+
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      50% { transform: translateX(10px); }
+      75% { transform: translateX(-6px); }
+    }
+
+    /* Екрани старту та фіналу */
+    .overlay-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 15px 0;
+    }
+
+    .big-btn {
+      background: linear-gradient(to right, #ffa502, #ff7f50);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 18px 36px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 7px 0 #cc633b;
+      transition: transform 0.15s;
+    }
+
+    .big-btn:hover {
+      transform: translateY(-3px);
+    }
+
+    .big-btn:active {
+      transform: translateY(4px);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Конфеті */
+    .confetti-piece {
+      position: fixed;
+      font-size: 2rem;
+      pointer-events: none;
+      z-index: 10;
+      animation: fallConfetti 1.4s ease-out forwards;
+    }
+
+    @keyframes fallConfetti {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(0.5) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-180px) scale(1.3) rotate(360deg);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .food-emoji { font-size: 5.5rem; }
+      .question-text { font-size: 1.25rem; }
+      .thumb-emoji { font-size: 3.6rem; }
+      .card-label { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-card">
+    <!-- Стартовий екран (потрібен для активації звуку в браузері) -->
+    <div id="start-screen" class="overlay-screen">
+      <div style="font-size: 5.5rem;">🥦🍎🥕</div>
+      <h1 style="font-size: 2rem; color: #20bf6b;">Вікторина «Корисна їжа»</h1>
+      <p style="font-size: 1.2rem; color: #57606f; max-width: 420px;">
+        Допоможи розібратися, які продукти дарують силу та здоров'я, а які краще їсти рідко!
+      </p>
+      <button class="big-btn" onclick="startGame()">Почати гру ▶️</button>
+    </div>
+
+    <!-- Основний екран гри -->
+    <div id="quiz-screen" class="hidden">
+      <div class="top-bar">
+        <div class="game-title">🥗 Корисна їжа</div>
+        <div class="score-badge">
+          ⭐ Виконано: <span id="score-count">0</span> / <span id="total-count">8</span>
+        </div>
+      </div>
+
+      <div class="food-emoji" id="food-emoji">🥣</div>
+
+      <div class="question-wrapper">
+        <div class="question-text" id="question-text">Чи корисна для здоров'я гречана каша?</div>
+        <button class="speak-btn" onclick="repeatQuestion()" title="Послухати ще раз">🔊</button>
+      </div>
+
+      <div class="feedback-banner" id="feedback-box"></div>
+
+      <div class="cards-grid">
+        <button class="answer-card card-yes" id="btn-yes" onclick="checkAnswer(true)">
+          <span class="thumb-emoji">👍</span>
+          <span class="card-label">Корисно!</span>
+        </button>
+
+        <button class="answer-card card-no" id="btn-no" onclick="checkAnswer(false)">
+          <span class="thumb-emoji">👎</span>
+          <span class="card-label">Шкідливо!</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Фінальний екран -->
+    <div id="end-screen" class="overlay-screen hidden">
+      <div style="font-size: 6rem;" class="celebrate">🏆🎉🍓</div>
+      <h2 style="font-size: 2rem; color: #20bf6b;">Чудова робота!</h2>
+      <p style="font-size: 1.3rem; color: #2f3542;">
+        Ти успішно виконав усі завдання: <strong id="final-score">8 з 8</strong>!
+      </p>
+      <p style="font-size: 1.15rem; color: #57606f;">
+        Тепер ти справжній знавець здорового харчування!
+      </p>
+      <button class="big-btn" onclick="startGame()">Зіграти ще раз 🔄</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        emoji: "🥣",
+        text: "Чи корисна для здоров'я гречана каша?",
+        isHealthy: true,
+        hint: "Гречана каша дає багато сили та енергії!"
+      },
+      {
+        emoji: "🥨",
+        text: "Чи корисні солоні сухарики з пакетика?",
+        isHealthy: false,
+        hint: "У сухариках забагато солі та спецій, вони шкодять животику."
+      },
+      {
+        emoji: "🍎",
+        text: "Чи корисні свіжі соковиті яблучка?",
+        isHealthy: true,
+        hint: "У яблуках багато вітамінів для міцного здоров'я!"
+      },
+      {
+        emoji: "🥤",
+        text: "Чи корисна солодка газована вода?",
+        isHealthy: false,
+        hint: "У газованій воді дуже багато цукру, краще пити чисту водичку."
+      },
+      {
+        emoji: "🥕",
+        text: "Чи корисна хрумка помаранчева морквина?",
+        isHealthy: true,
+        hint: "Морквина допомагає нашим оченятам добре бачити!"
+      },
+      {
+        emoji: "🍟",
+        text: "Чи корисна смажена картопля фрі?",
+        isHealthy: false,
+        hint: "Картопля фрі занадто жирна, вона не підходить для щоденного харчування."
+      },
+      {
+        emoji: "🥛",
+        text: "Чи корисні молоко та сир?",
+        isHealthy: true,
+        hint: "Молочні продукти роблять наші зубки та кісточки міцними!"
+      },
+      {
+        emoji: "🍭",
+        text: "Чи корисно їсти багато льодяників та цукерок?",
+        isHealthy: false,
+        hint: "Від великої кількості цукерок можуть зіпсуватися зубки."
+      }
+    ];
+
+    const praises = [
+      "Молодець! Правильно!",
+      "Супер! Так тримати!",
+      "Розумничок! Це правильна відповідь!",
+      "Чудово! Ти все знаєш!"
+    ];
+
+    let currentIndex = 0;
+    let completedCount = 0;
+    let isLocked = false;
+
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const endScreen = document.getElementById('end-screen');
+
+    const scoreCountEl = document.getElementById('score-count');
+    const totalCountEl = document.getElementById('total-count');
+    const foodEmojiEl = document.getElementById('food-emoji');
+    const questionTextEl = document.getElementById('question-text');
+    const feedbackBoxEl = document.getElementById('feedback-box');
+    const btnYes = document.getElementById('btn-yes');
+    const btnNo = document.getElementById('btn-no');
+
+    // Синтез мовлення українською мовою
+    function speakText(text, onEndCallback = null) {
+      if (!('speechSynthesis' in window)) {
+        if (onEndCallback) setTimeout(onEndCallback, 1200);
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'uk-UA';
+      utterance.rate = 0.95; // Трохи повільніше для дітей 4-6 років
+      utterance.pitch = 1.15; // Привітний дитячий тон
+
+      if (onEndCallback) {
+        utterance.onend = onEndCallback;
+        utterance.onerror = onEndCallback;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Веселий звуковий ефект через Web Audio API
+    function playChime(isSuccess) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (isSuccess) {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime); // До
+          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12); // Мі
+          osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.24); // Соль
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.5);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(280, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(210, ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.35);
+        }
+      } catch (e) {
+        // Ігноруємо, якщо аудіо заблоковане
+      }
+    }
+
+    // Запуск конфеті при правильній відповіді
+    function spawnConfetti() {
+      const icons = ['⭐', '🌟', '🎉', '✨', '💚', '🍀'];
+      for (let i = 0; i < 14; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.textContent = icons[Math.floor(Math.random() * icons.length)];
+        piece.style.left = (20 + Math.random() * 60) + 'vw';
+        piece.style.top = (40 + Math.random() * 25) + 'vh';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 1400);
+      }
+    }
+
+    function startGame() {
+      currentIndex = 0;
+      completedCount = 0;
+      scoreCountEl.textContent = completedCount;
+      totalCountEl.textContent = questions.length;
+
+      startScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      isLocked = false;
+      btnYes.disabled = false;
+      btnNo.disabled = false;
+
+      const currentQ = questions[currentIndex];
+      foodEmojiEl.textContent = currentQ.emoji;
+      foodEmojiEl.classList.remove('celebrate', 'shake');
+      questionTextEl.textContent = currentQ.text;
+      feedbackBoxEl.textContent = '';
+      feedbackBoxEl.className = 'feedback-banner';
+
+      speakText(currentQ.text);
+    }
+
+    function repeatQuestion() {
+      if (!isLocked) {
+        speakText(questions[currentIndex].text);
+      }
+    }
+
+    function checkAnswer(userSaysHealthy) {
+      if (isLocked) return;
+      const currentQ = questions[currentIndex];
+
+      if (userSaysHealthy === currentQ.isHealthy) {
+        // Правильна відповідь
+        isLocked = true;
+        btnYes.disabled = true;
+        btnNo.disabled = true;
+
+        completedCount++;
+        scoreCountEl.textContent = completedCount;
+
+        const praise = praises[Math.floor(Math.random() * praises.length)];
+        feedbackBoxEl.textContent = "🎉 " + praise;
+        feedbackBoxEl.className = 'feedback-banner feedback-correct';
+
+        foodEmojiEl.classList.remove('celebrate');
+        void foodEmojiEl.offsetWidth;
+        foodEmojiEl.classList.add('celebrate');
+
+        playChime(true);
+        spawnConfetti();
+
+        speakText(praise, () => {
+          setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < questions.length) {
+              loadQuestion();
+            } else {
+              finishGame();
+            }
+          }, 500);
+        });
+      } else {
+        // Помилка — м'яка підказка, дитина може спробувати ще раз
+        playChime(false);
+        feedbackBoxEl.textContent = "🤔 Спробуй ще раз! " + currentQ.hint;
+        feedbackBoxEl.className = 'feedback-banner feedback-wrong';
+
+        foodEmojiEl.classList.remove('shake');
+        void foodEmojiEl.offsetWidth;
+        foodEmojiEl.classList.add('shake');
+
+        speakText("Подумай ще трішки. " + currentQ.hint);
+      }
+    }
+
+    function finishGame() {
+      quizScreen.classList.add('hidden');
+      endScreen.classList.remove('hidden');
+      document.getElementById('final-score').textContent = `${completedCount} з ${questions.length}`;
+      spawnConfetti();
+      speakText("Вітаю! Ти чудово впорався з усіма завданнями!");
+    }
+  </script>
+</body>
+</html>
